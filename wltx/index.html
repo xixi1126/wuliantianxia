@@ -1,0 +1,2630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物联天下 | 全链条井下火灾爆炸智能感知与监测预警系统</title>
+    
+    <!-- 3D库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    
+    <!-- 图表库 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- 字体和图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ===== 修复：导航栏遮挡问题 ===== */
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 80px;
+        }
+
+        body {
+            padding-top: 80px;
+            margin: 0;
+        }
+
+        /* ===== 高级变量系统 ===== */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #0066FF 0%, #00D4FF 100%);
+            --secondary-gradient: linear-gradient(135deg, #7B61FF 0%, #00D4FF 100%);
+            --accent-gradient: linear-gradient(135deg, #FF6B6B 0%, #FFD93D 100%);
+            --dark-gradient: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            --cta-gradient: linear-gradient(135deg, #1a237e 0%, #283593 20%, #3949ab 40%, #3f51b5 60%, #7986cb 80%, #9fa8da 100%);
+            
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            
+            --color-primary: #0066FF;
+            --color-secondary: #7B61FF;
+            --color-accent: #FF6B6B;
+            --color-dark: #0F172A;
+            --color-light: #F8FAFC;
+            
+            --font-primary: 'Inter', 'Microsoft YaHei', sans-serif;
+            --font-heading: 'Space Grotesk', 'Microsoft YaHei', sans-serif;
+            
+            --transition-smooth: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-bounce: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            
+            --shadow-3d: 0 20px 60px rgba(0, 0, 0, 0.1);
+            --shadow-float: 0 40px 80px rgba(0, 0, 0, 0.12);
+        }
+
+        /* ===== 基础重置 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-primary);
+            line-height: 1.8;
+            color: #334155;
+            background: var(--color-light);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        section {
+            padding: 100px 0;
+        }
+
+        /* ===== 3D场景容器 ===== */
+        .three-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        /* ===== 修复：高级导航栏 ===== */
+        .advanced-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 15px 0;
+            transition: var(--transition-smooth);
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.98);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            height: 80px;
+            display: flex;
+            align-items: center;
+        }
+
+        .advanced-nav.scrolled {
+            background: rgba(255, 255, 255, 1);
+            box-shadow: var(--shadow-3d);
+            padding: 12px 0;
+            height: 70px;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+
+        .logo-shape {
+            width: 45px;
+            height: 45px;
+            background: var(--primary-gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: 800;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo-shape:after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        .logo-text h1 {
+            font-family: var(--font-heading);
+            font-size: 22px;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+        }
+
+        .logo-text p {
+            font-size: 11px;
+            color: #64748B;
+            letter-spacing: 0.5px;
+        }
+
+        .advanced-nav-menu {
+            display: flex;
+            gap: 25px;
+            position: relative;
+            align-items: center;
+        }
+
+        .nav-item {
+            position: relative;
+        }
+
+        .nav-link {
+            color: #334155;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 8px 0;
+            position: relative;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .nav-link:before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-gradient);
+            border-radius: 1px;
+            transition: var(--transition-smooth);
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--color-primary);
+        }
+
+        .nav-link:hover:before,
+        .nav-link.active:before {
+            width: 100%;
+        }
+
+        .nav-indicator {
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            height: 2px;
+            background: var(--primary-gradient);
+            border-radius: 1px;
+            transition: var(--transition-smooth);
+        }
+
+        .nav-cta {
+            padding: 10px 24px;
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: 20px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+            box-shadow: 0 8px 24px rgba(0, 102, 255, 0.2);
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(0, 102, 255, 0.3);
+        }
+
+        /* ===== 修复：英雄区域 ===== */
+        .advanced-hero {
+            min-height: calc(100vh - 80px);
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            margin-top: 0;
+        }
+
+        .hero-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 102, 255, 0.05) 0%, rgba(0, 212, 255, 0.05) 100%);
+            z-index: -1;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: var(--primary-gradient);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .hero-title {
+            font-family: var(--font-heading);
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 25px;
+            background: linear-gradient(135deg, #334155 0%, var(--color-primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+            color: #64748B;
+            margin-bottom: 35px;
+            line-height: 1.7;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 25px;
+            margin-top: 40px;
+        }
+
+        .stat-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: var(--shadow-3d);
+        }
+
+        .stat-circle:before {
+            content: '';
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 2px dashed rgba(0, 102, 255, 0.2);
+            animation: spin 20s linear infinite;
+        }
+
+        .stat-value {
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            position: absolute;
+            bottom: -25px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 12px;
+            color: #64748B;
+            font-weight: 500;
+        }
+
+        .hero-visual {
+            position: relative;
+            height: 500px;
+        }
+
+        .floating-card {
+            position: absolute;
+            background: white;
+            border-radius: 18px;
+            box-shadow: var(--shadow-float);
+            padding: 25px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .card-1 {
+            top: 0;
+            right: 0;
+            width: 280px;
+            animation-delay: 0s;
+        }
+
+        .card-2 {
+            bottom: 80px;
+            left: 0;
+            width: 240px;
+            animation-delay: 2s;
+        }
+
+        .card-3 {
+            bottom: 0;
+            right: 80px;
+            width: 180px;
+            animation-delay: 4s;
+        }
+
+        /* ===== 市场痛点 ===== */
+        .market-pain {
+            background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+        }
+
+        .pain-points-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .pain-card {
+            background: white;
+            border-radius: 18px;
+            padding: 35px;
+            box-shadow: var(--shadow-3d);
+            transition: var(--transition-smooth);
+            border-left: 5px solid var(--color-primary);
+        }
+
+        .pain-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-float);
+        }
+
+        .pain-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+        }
+
+        /* ===== 核心技术突破 ===== */
+        .tech-breakthroughs {
+            background: var(--dark-gradient);
+            color: white;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .tech-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 22px;
+            padding: 35px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tech-card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .tech-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 25px;
+            color: white;
+        }
+
+        /* ===== 产品演进 - 优化后的三列布局 ===== */
+        .product-evolution {
+            background: white;
+            position: relative;
+        }
+
+        .evolution-container {
+            position: relative;
+            margin-top: 60px;
+        }
+
+        .evolution-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .generation-year {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+        .year-badge {
+            display: inline-block;
+            background: var(--primary-gradient);
+            color: white;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 8px 20px rgba(0, 102, 255, 0.2);
+        }
+
+        .generation-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 10px;
+        }
+
+        .evolution-content {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .generation-card {
+            background: white;
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: var(--shadow-3d);
+            border: 1px solid #F1F5F9;
+            transition: var(--transition-smooth);
+            height: 100%;
+        }
+
+        .generation-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-float);
+        }
+
+        .parameter-table {
+            width: 100%;
+            margin-top: 25px;
+            border-collapse: collapse;
+        }
+
+        .parameter-table th {
+            text-align: left;
+            padding: 12px 15px;
+            background: #F8FAFC;
+            color: #334155;
+            font-weight: 600;
+            font-size: 13px;
+            border-bottom: 2px solid #E2E8F0;
+            white-space: nowrap;
+        }
+
+        .parameter-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #F1F5F9;
+            color: #64748B;
+            font-size: 13px;
+        }
+
+        .parameter-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* ===== 在线商城 ===== */
+        .online-store {
+            background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+        }
+
+        .store-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-top: 50px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: var(--shadow-3d);
+            transition: var(--transition-smooth);
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-float);
+        }
+
+        .product-image {
+            height: 220px;
+            background: var(--primary-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3.5rem;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .product-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .product-info {
+            padding: 25px;
+        }
+
+        .product-price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin: 15px 0;
+        }
+
+        .sold-badge {
+            display: inline-block;
+            background: #F1F5F9;
+            color: #64748B;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+
+        /* ===== 完整团队展示 ===== */
+        .full-team {
+            background: white;
+        }
+
+        .team-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 50px;
+            margin-top: 50px;
+        }
+
+        .team-category {
+            margin-bottom: 40px;
+        }
+
+        .category-title {
+            font-size: 1.5rem;
+            color: var(--color-dark);
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--color-primary);
+            font-weight: 700;
+        }
+
+        .team-grid-students {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+
+        .team-grid-advisors {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        .team-member-card {
+            background: white;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: var(--shadow-3d);
+            transition: var(--transition-smooth);
+            border: 1px solid #F1F5F9;
+            height: 100%;
+        }
+
+        .team-member-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-float);
+        }
+
+        .member-avatar {
+            height: 220px;
+            background: var(--primary-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3.5rem;
+            position: relative;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .member-avatar img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .member-info {
+            padding: 25px;
+        }
+
+        .member-role {
+            color: var(--color-primary);
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .member-awards {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #F1F5F9;
+        }
+
+        .award-badge {
+            display: inline-block;
+            background: #F1F5F9;
+            color: #64748B;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        /* ===== 媒体报道 ===== */
+        .media-coverage {
+            background: var(--dark-gradient);
+            color: white;
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .media-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 18px;
+            padding: 35px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: var(--transition-smooth);
+        }
+
+        .media-card:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .media-logo {
+            height: 50px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        /* ===== 应用实例 ===== */
+        .case-studies {
+            background: white;
+        }
+
+        .case-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .case-card {
+            background: #F8FAFC;
+            border-radius: 18px;
+            padding: 35px;
+            transition: var(--transition-smooth);
+        }
+
+        .case-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-3d);
+        }
+
+        /* ===== 增强版CTA区域 ===== */
+        .enhanced-cta {
+            padding: 120px 0;
+            position: relative;
+            overflow: hidden;
+            background: var(--cta-gradient);
+            color: white;
+            text-align: center;
+        }
+
+        .cta-container {
+            position: relative;
+            z-index: 3;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* 粒子背景效果 */
+        .cta-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: floatParticle 15s infinite linear;
+        }
+
+        /* 标题样式 */
+        .cta-title {
+            font-family: var(--font-heading);
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 35px;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 1) 0%, 
+                rgba(255, 255, 255, 0.9) 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .cta-title span {
+            display: block;
+            font-size: 3rem;
+            background: linear-gradient(135deg, 
+                #FFD700 0%, 
+                #FFA500 50%, 
+                #FF8C00 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* 描述文字 */
+        .cta-description {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto 50px;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        .cta-description strong {
+            font-weight: 600;
+            color: #FFD700;
+        }
+
+        /* 联系按钮 */
+        .cta-contact-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, 
+                #FF6B35 0%, 
+                #FF8C42 50%, 
+                #FFA726 100%
+            );
+            color: white;
+            padding: 20px 45px;
+            border-radius: 45px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 40px rgba(255, 107, 53, 0.4);
+            position: relative;
+            overflow: hidden;
+            z-index: 2;
+            margin-bottom: 70px;
+            animation: pulse 2s infinite;
+        }
+
+        .cta-contact-button:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, 
+                #FF8C42 0%, 
+                #FF6B35 50%, 
+                #FF5252 100%
+            );
+            opacity: 0;
+            transition: opacity 0.4s;
+            z-index: -1;
+        }
+
+        .cta-contact-button:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 20px 60px rgba(255, 107, 53, 0.6);
+        }
+
+        .cta-contact-button:hover:before {
+            opacity: 1;
+        }
+
+        .cta-contact-button .phone-icon {
+            background: rgba(255, 255, 255, 0.2);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        /* 统计卡片 */
+        .cta-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 18px;
+            padding: 35px 25px;
+            transition: all 0.4s ease;
+        }
+
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, 
+                #4FC3F7 0%, 
+                #29B6F6 50%, 
+                #0288D1 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        /* 公司Logo */
+        .university-logo {
+            margin-top: 70px;
+            padding-top: 35px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo-container {
+            display: inline-flex;
+            align-items: center;
+            gap: 18px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 18px 35px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-badge {
+            background: #FFD700;
+            color: #1a237e;
+            padding: 6px 18px;
+            border-radius: 18px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .logo-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* ===== 高级页脚 ===== */
+        .advanced-footer {
+            background: var(--color-dark);
+            color: white;
+            padding: 80px 0 30px;
+            position: relative;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 50px;
+            margin-bottom: 50px;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .footer-newsletter {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 22px;
+            margin-top: 25px;
+        }
+
+        .newsletter-input {
+            width: 100%;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .newsletter-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .footer-bottom {
+            padding-top: 35px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+        }
+
+        /* ===== 通用样式 ===== */
+        .section-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .section-label {
+            display: inline-block;
+            background: var(--primary-gradient);
+            color: white;
+            padding: 7px 18px;
+            border-radius: 18px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 18px;
+            letter-spacing: 0.5px;
+        }
+
+        .section-title {
+            font-family: var(--font-heading);
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 18px;
+            background: linear-gradient(135deg, #334155, var(--color-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-subtitle {
+            font-size: 1.1rem;
+            color: #64748B;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        /* ===== 动画定义 ===== */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes floatParticle {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            25% {
+                transform: translateY(-15px) rotate(90deg);
+            }
+            50% {
+                transform: translateY(0) rotate(180deg);
+            }
+            75% {
+                transform: translateY(15px) rotate(270deg);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 10px 40px rgba(255, 107, 53, 0.4);
+            }
+            50% {
+                box-shadow: 0 10px 40px rgba(255, 107, 53, 0.8);
+            }
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ===== 响应式设计 ===== */
+        @media (max-width: 1200px) {
+            .hero-title {
+                font-size: 3rem;
+            }
+            
+            .tech-grid,
+            .team-grid-students,
+            .media-grid,
+            .store-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .footer-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .evolution-header,
+            .evolution-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+            
+            .generation-year {
+                text-align: left;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .case-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .team-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-link span {
+                display: none;
+            }
+            
+            .nav-link {
+                padding: 8px 12px;
+            }
+            
+            .advanced-nav-menu {
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding-top: 70px;
+            }
+            
+            .advanced-nav {
+                height: 70px;
+                padding: 12px 0;
+            }
+            
+            .advanced-nav.scrolled {
+                height: 65px;
+            }
+            
+            .container {
+                padding: 0 20px;
+            }
+            
+            .hero-title {
+                font-size: 2.2rem;
+            }
+            
+            .hero-visual {
+                height: 400px;
+            }
+            
+            .floating-card {
+                position: relative;
+                width: 100% !important;
+                margin-bottom: 20px;
+                animation: none;
+            }
+            
+            .card-1, .card-2, .card-3 {
+                position: relative;
+                top: auto;
+                left: auto;
+                right: auto;
+                bottom: auto;
+                width: 100%;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .cta-title {
+                font-size: 2.2rem;
+            }
+            
+            .cta-title span {
+                font-size: 1.8rem;
+            }
+            
+            .cta-description {
+                font-size: 1rem;
+                padding: 0 15px;
+            }
+            
+            .cta-contact-button {
+                padding: 16px 30px;
+                font-size: 1.1rem;
+            }
+            
+            .tech-grid,
+            .team-grid-students,
+            .team-grid-advisors,
+            .media-grid,
+            .store-grid,
+            .pain-points-grid,
+            .cta-stats {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .stat-card {
+                padding: 25px 20px;
+            }
+            
+            .stat-value {
+                font-size: 2.2rem;
+            }
+            
+            .advanced-nav-menu {
+                display: none;
+            }
+            
+            .nav-cta {
+                display: none;
+            }
+            
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .parameter-table {
+                font-size: 12px;
+            }
+            
+            .parameter-table th,
+            .parameter-table td {
+                padding: 8px 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+            
+            .stat-circle {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .stat-circle:before {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .hero-title {
+                font-size: 1.8rem;
+            }
+            
+            .cta-title {
+                font-size: 1.8rem;
+            }
+            
+            .section-title {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 3D场景 -->
+    <div class="three-container" id="three-container"></div>
+
+    <!-- 修复后的导航栏 -->
+    <nav class="advanced-nav" id="advanced-nav">
+        <div class="container">
+            <div class="nav-container">
+                <div class="logo-container">
+                    <div class="logo-shape" style="width: 45px; height: 45px; background: none; display: flex; align-items: center; justify-content: center;">
+                        <img src="images/logo.png" alt="物联天下" style="width: 100%; height: 100%; object-fit: contain;">
+                    </div>
+                    <div class="logo-text">
+                        <h1>物联天下</h1>
+                        <p>全链条安全监测</p>
+                    </div>
+                </div>
+
+                <div class="advanced-nav-menu">
+                    <div class="nav-item">
+                        <a href="#home" class="nav-link active">
+                            <i class="fas fa-home"></i>
+                            <span>首页</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#market" class="nav-link">
+                            <i class="fas fa-chart-line"></i>
+                            <span>市场痛点</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#tech" class="nav-link">
+                            <i class="fas fa-microchip"></i>
+                            <span>核心技术</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#evolution" class="nav-link">
+                            <i class="fas fa-history"></i>
+                            <span>产品演进</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#store" class="nav-link">
+                            <i class="fas fa-store"></i>
+                            <span>在线商城</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#team" class="nav-link">
+                            <i class="fas fa-users"></i>
+                            <span>团队介绍</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#media" class="nav-link">
+                            <i class="fas fa-newspaper"></i>
+                            <span>媒体报道</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#contact" class="nav-link">
+                            <i class="fas fa-phone-alt"></i>
+                            <span>联系我们</span>
+                        </a>
+                    </div>
+                    <div class="nav-indicator" id="nav-indicator"></div>
+                </div>
+
+                <a href="#contact" class="nav-cta">
+                    <i class="fas fa-phone-alt"></i>
+                    立即咨询
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 修复后的英雄区域 -->
+    <section id="home" class="advanced-hero">
+        <div class="hero-background"></div>
+        <div class="container">
+            <div class="hero-grid">
+                <div class="hero-content">
+                    <div class="hero-badge">
+                        <i class="fas fa-award"></i>
+                        安徽理工大学科技创新项目
+                    </div>
+                    <h1 class="hero-title">
+                        全链条井下火灾爆炸
+                        <span style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            智能感知与监测预警系统
+                        </span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        基于"端-边-云"协同架构，融合物联网、人工智能、大数据与边缘计算技术，
+                        实现煤矿安全风险的实时监测、精准预警与智能决策，为矿工生命安全提供全天候守护。
+                    </p>
+                    
+                    <div class="hero-stats">
+                        <div class="stat-circle">
+                            <div class="stat-value">92.3%</div>
+                            <div class="stat-label">预测准确率</div>
+                        </div>
+                        <div class="stat-circle">
+                            <div class="stat-value">-65%</div>
+                            <div class="stat-label">事故降低率</div>
+                        </div>
+                        <div class="stat-circle">
+                            <div class="stat-value">2400h</div>
+                            <div class="stat-label">超长待机</div>
+                        </div>
+                        <div class="stat-circle">
+                            <div class="stat-value"><5min</div>
+                            <div class="stat-label">预测误差</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hero-visual">
+                    <div class="floating-card card-1">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                            <div style="width: 45px; height: 45px; background: var(--primary-gradient); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white;">
+                                <i class="fas fa-microchip"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 5px;">MINER-300AI</div>
+                                <div style="color: #64748B; font-size: 0.85rem;">智能感知终端</div>
+                            </div>
+                        </div>
+                        <div style="font-size: 0.85rem; color: #64748B;">
+                            8种气体监测，AI智能预测，2400小时超长待机
+                        </div>
+                    </div>
+                    
+                    <div class="floating-card card-2">
+                        <div style="font-size: 1.8rem; font-weight: 700; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px;">
+                            3.52万亿元
+                        </div>
+                        <div style="font-size: 0.85rem; color: #64748B;">
+                            2025年市场规模预测
+                        </div>
+                    </div>
+                    
+                    <div class="floating-card card-3">
+                        <div style="font-weight: 700; margin-bottom: 8px; font-size: 0.9rem;">项目支持</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            <div style="padding: 4px 8px; background: #F1F5F9; border-radius: 6px; font-size: 0.75rem;">5项发明专利</div>
+                            <div style="padding: 4px 8px; background: #F1F5F9; border-radius: 6px; font-size: 0.75rem;">4项实用新型</div>
+                            <div style="padding: 4px 8px; background: #F1F5F9; border-radius: 6px; font-size: 0.75rem;">4项软件著作权</div>
+                            <div style="padding: 4px 8px; background: #F1F5F9; border-radius: 6px; font-size: 0.75rem;">1篇SCI论文</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 市场痛点 -->
+    <section id="market" class="market-pain">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">行业分析</div>
+                <h2 class="section-title">煤矿安全面临的严峻挑战</h2>
+                <p class="section-subtitle">
+                    矿井火灾爆炸事故频发，现有监测系统存在成本高、预警不及时、数据孤岛严重等问题
+                </p>
+            </div>
+
+            <div class="pain-points-grid">
+                <div class="pain-card">
+                    <div class="pain-number">01</div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 12px;">静态化缺陷</h3>
+                    <p style="color: #64748B; line-height: 1.7; font-size: 0.95rem;">
+                        爆炸三角形理论在实验室静态条件下验证成熟，但无法实时动态修正爆炸边界阈值，
+                        导致预警不及时或误报。
+                    </p>
+                </div>
+
+                <div class="pain-card">
+                    <div class="pain-number">02</div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 12px;">纸质化程度高</h3>
+                    <p style="color: #64748B; line-height: 1.7; font-size: 0.95rem;">
+                        煤矿行业数据记录仍大量依赖纸质文档，信息更新慢，查询困难，
+                        应急响应效率低下。
+                    </p>
+                </div>
+
+                <div class="pain-card">
+                    <div class="pain-number">03</div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 12px;">高成本低寿命</h3>
+                    <p style="color: #64748B; line-height: 1.7; font-size: 0.95rem;">
+                        现有监测设备成本高、安装复杂，传感器寿命短、维护困难，
+                        给企业带来沉重负担。
+                    </p>
+                </div>
+
+                <div class="pain-card">
+                    <div class="pain-number">04</div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 12px;">数据孤岛严重</h3>
+                    <p style="color: #64748B; line-height: 1.7; font-size: 0.95rem;">
+                        各系统之间信息共享困难，无法形成统一的风险评估和预警机制，
+                        缺乏整体安全防控能力。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 核心技术突破 -->
+    <section id="tech" class="tech-breakthroughs">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label" style="background: var(--secondary-gradient);">技术创新</div>
+                <h2 class="section-title" style="background: linear-gradient(135deg, white, #00D4FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    三大核心技术突破
+                </h2>
+                <p class="section-subtitle" style="color: rgba(255, 255, 255, 0.7);">
+                    从硬件到软件，从感知到预警的全链条技术创新
+                </p>
+            </div>
+
+            <div class="tech-grid">
+                <!-- 创新1 -->
+                <div class="tech-card">
+                    <div class="tech-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 12px; color: white;">
+                        微型化智能感知终端
+                    </h3>
+                    <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 20px; font-size: 0.9rem;">
+                        软硬件深度协同，体积缩小80%，检测精度±1%
+                    </p>
+                    
+                    <div style="margin: 25px 0;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                            <div style="width: 8px; height: 8px; background: #00D4FF; border-radius: 50%;"></div>
+                            <div style="color: white; font-size: 0.9rem;">OLED显示屏 + NRF24L01通信模块</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                            <div style="width: 8px; height: 8px; background: #00D4FF; border-radius: 50%;"></div>
+                            <div style="color: white; font-size: 0.9rem;">复合气体传感器阵列 (CO/CH₄/O₂等)</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 8px; height: 8px; background: #00D4FF; border-radius: 50%;"></div>
+                            <div style="color: white; font-size: 0.9rem;">事故发生率降低65%</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(0, 212, 255, 0.1); border-radius: 12px; padding: 15px; margin-top: 25px;">
+                        <div style="color: #00D4FF; font-weight: 600; font-size: 0.9rem;">环保效益</div>
+                        <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem; margin-top: 5px;">
+                            节约6169吨纸张，减少1058.814万kg碳排放
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 创新2 -->
+                <div class="tech-card">
+                    <div class="tech-icon">
+                        <i class="fas fa-wifi"></i>
+                    </div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 12px; color: white;">
+                        高鲁棒性无线传感网络
+                    </h3>
+                    <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 20px; font-size: 0.9rem;">
+                        矿井恶劣环境自适应，10秒接入网络，延迟&lt;1秒
+                    </p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 25px 0;">
+                        <div style="text-align: center; padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <div style="font-size: 1rem; font-weight: 700; color: white; margin-bottom: 4px;">2400h</div>
+                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">待机时间</div>
+                        </div>
+                        <div style="text-align: center; padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <div style="font-size: 1rem; font-weight: 700; color: white; margin-bottom: 4px;">500m</div>
+                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">传输距离</div>
+                        </div>
+                        <div style="text-align: center; padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <div style="font-size: 1rem; font-weight: 700; color: white; margin-bottom: 4px;">&lt;500元</div>
+                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">基站成本</div>
+                        </div>
+                        <div style="text-align: center; padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <div style="font-size: 1rem; font-weight: 700; color: white; margin-bottom: 4px;">25%</div>
+                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">竞品成本比例</div>
+                        </div>
+                    </div>
+                    
+                    <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem;">
+                        自组网通信协议，网络自愈，单点故障不影响整体
+                    </div>
+                </div>
+
+                <!-- 创新3 -->
+                <div class="tech-card">
+                    <div class="tech-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 12px; color: white;">
+                        智能推演预警体系
+                    </h3>
+                    <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 20px; font-size: 0.9rem;">
+                        多源数据融合与AI决策，实现从状态预警到时间预警的跨越
+                    </p>
+                    
+                    <div style="margin: 25px 0;">
+                        <div style="background: rgba(255, 107, 107, 0.1); border-radius: 12px; padding: 20px; text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 800; color: #FF6B6B; margin-bottom: 8px;">
+                                >92.3%
+                            </div>
+                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">爆炸预测准确率</div>
+                        </div>
+                    </div>
+                    
+                    <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <i class="fas fa-check" style="color: #FF6B6B; font-size: 0.8rem;"></i>
+                            <span>动态爆炸三角形算法</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <i class="fas fa-check" style="color: #FF6B6B; font-size: 0.8rem;"></i>
+                            <span>预测误差&lt;5分钟</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-check" style="color: #FF6B6B; font-size: 0.8rem;"></i>
+                            <span>误报率降低42%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 产品演进时间线 - 完全修复版 -->
+    <section id="evolution" class="product-evolution">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">技术演进</div>
+                <h2 class="section-title">三代产品技术对比</h2>
+                <p class="section-subtitle">
+                    全面了解技术演进路线，从基础监测到AI智能预测的完整升级
+                </p>
+            </div>
+
+            <div class="evolution-container">
+                <!-- 年份标签行 -->
+                <div class="evolution-header">
+                    <div class="generation-year">
+                        <div class="year-badge">2022 · 一代设备</div>
+                        <div class="generation-title">MINER-100 基础监测终端</div>
+                        <div style="color: #64748B; font-size: 0.9rem;">首款井下监测设备，实现基础气体参数监测</div>
+                    </div>
+                    <div class="generation-year">
+                        <div class="year-badge">2023 · 二代设备</div>
+                        <div class="generation-title">MINER-200 智能监测系统</div>
+                        <div style="color: #64748B; font-size: 0.9rem;">引入无线通信技术，实现多参数监测</div>
+                    </div>
+                    <div class="generation-year">
+                        <div class="year-badge">2024 · 三代设备</div>
+                        <div class="generation-title">MINER-300 AI智能感知系统</div>
+                        <div style="color: #64748B; font-size: 0.9rem;">革命性AI技术应用，实现爆炸时间预测</div>
+                    </div>
+                </div>
+
+                <!-- 产品内容三列 -->
+                <div class="evolution-content">
+                    <!-- 一代设备 -->
+                    <div class="generation-card">
+                        <table class="parameter-table">
+                            <tbody>
+                                <tr>
+                                    <th>产品定位</th>
+                                    <td>基础监测终端</td>
+                                </tr>
+                                <tr>
+                                    <th>监测气体</th>
+                                    <td>CO/O₂/CH₄</td>
+                                </tr>
+                                <tr>
+                                    <th>检测精度</th>
+                                    <td>±5%</td>
+                                </tr>
+                                <tr>
+                                    <th>传输方式</th>
+                                    <td>有线传输</td>
+                                </tr>
+                                <tr>
+                                    <th>待机时间</th>
+                                    <td>720小时</td>
+                                </tr>
+                                <tr>
+                                    <th>通讯距离</th>
+                                    <td>100米</td>
+                                </tr>
+                                <tr>
+                                    <th>工作温度</th>
+                                    <td>-10℃~50℃</td>
+                                </tr>
+                                <tr>
+                                    <th>工作湿度</th>
+                                    <td>0%~90%</td>
+                                </tr>
+                                <tr>
+                                    <th>供电方式</th>
+                                    <td>DC 12V/锂电池</td>
+                                </tr>
+                                <tr>
+                                    <th>防护等级</th>
+                                    <td>IP54</td>
+                                </tr>
+                                <tr>
+                                    <th>智能功能</th>
+                                    <td>基础监测</td>
+                                </tr>
+                                <tr>
+                                    <th>预测准确率</th>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <th>AI技术应用</th>
+                                    <td>无</td>
+                                </tr>
+                                <tr>
+                                    <th>部署难度</th>
+                                    <td>中等</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 二代设备 -->
+                    <div class="generation-card">
+                        <table class="parameter-table">
+                            <tbody>
+                                <tr>
+                                    <th>产品定位</th>
+                                    <td>智能监测系统</td>
+                                </tr>
+                                <tr>
+                                    <th>监测气体</th>
+                                    <td>CO/O₂/CH₄/温度/湿度</td>
+                                </tr>
+                                <tr>
+                                    <th>检测精度</th>
+                                    <td>±2%</td>
+                                </tr>
+                                <tr>
+                                    <th>传输方式</th>
+                                    <td>WiFi/蓝牙</td>
+                                </tr>
+                                <tr>
+                                    <th>待机时间</th>
+                                    <td>1200小时</td>
+                                </tr>
+                                <tr>
+                                    <th>通讯距离</th>
+                                    <td>100米（空旷）</td>
+                                </tr>
+                                <tr>
+                                    <th>工作温度</th>
+                                    <td>-20℃~60℃</td>
+                                </tr>
+                                <tr>
+                                    <th>工作湿度</th>
+                                    <td>0%~95%</td>
+                                </tr>
+                                <tr>
+                                    <th>供电方式</th>
+                                    <td>DC 12V/锂电池/太阳能</td>
+                                </tr>
+                                <tr>
+                                    <th>防护等级</th>
+                                    <td>IP65</td>
+                                </tr>
+                                <tr>
+                                    <th>智能功能</th>
+                                    <td>实时预警</td>
+                                </tr>
+                                <tr>
+                                    <th>预测准确率</th>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <th>AI技术应用</th>
+                                    <td>基础AI算法</td>
+                                </tr>
+                                <tr>
+                                    <th>部署难度</th>
+                                    <td>简单</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 三代设备 -->
+                    <div class="generation-card">
+                        <table class="parameter-table">
+                            <tbody>
+                                <tr>
+                                    <th>产品定位</th>
+                                    <td>AI智能感知系统</td>
+                                </tr>
+                                <tr>
+                                    <th>监测气体</th>
+                                    <td>CO/O₂/CH₄/H₂S/CO₂/NO₂/SO₂/H₂/温度/湿度/压力</td>
+                                </tr>
+                                <tr>
+                                    <th>检测精度</th>
+                                    <td>±1%</td>
+                                </tr>
+                                <tr>
+                                    <th>传输方式</th>
+                                    <td>4G/NB-IoT/LoRa</td>
+                                </tr>
+                                <tr>
+                                    <th>待机时间</th>
+                                    <td>2400小时</td>
+                                </tr>
+                                <tr>
+                                    <th>通讯距离</th>
+                                    <td>500米（基站）</td>
+                                </tr>
+                                <tr>
+                                    <th>工作温度</th>
+                                    <td>-40℃~85℃</td>
+                                </tr>
+                                <tr>
+                                    <th>工作湿度</th>
+                                    <td>0%~100%</td>
+                                </tr>
+                                <tr>
+                                    <th>供电方式</th>
+                                    <td>DC 12V/锂电池/太阳能</td>
+                                </tr>
+                                <tr>
+                                    <th>防护等级</th>
+                                    <td>IP67防爆</td>
+                                </tr>
+                                <tr>
+                                    <th>智能功能</th>
+                                    <td>AI预测预警</td>
+                                </tr>
+                                <tr>
+                                    <th>预测准确率</th>
+                                    <td>92%</td>
+                                </tr>
+                                <tr>
+                                    <th>AI技术应用</th>
+                                    <td>动态爆炸三角形算法/机器学习模型/多源数据融合</td>
+                                </tr>
+                                <tr>
+                                    <th>部署难度</th>
+                                    <td>极简（无线）</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 在线商城 -->
+    <section id="store" class="online-store">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">产品中心</div>
+                <h2 class="section-title">智能安全监测产品</h2>
+                <p class="section-subtitle">
+                    三大核心产品，覆盖不同应用场景，为矿山安全提供全方位保障
+                </p>
+            </div>
+
+            <div class="store-grid">
+                <!-- 产品1 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="images/product1.jpg" alt="物联天下智能感知终端 IOT-100（一代）">
+                    </div>
+                    <div class="product-info">
+                        <h3 style="font-size: 1.2rem; margin-bottom: 8px;">物联天下智能感知终端 IOT-100（一代）</h3>
+                        <p style="color: #64748B; font-size: 0.85rem; margin-bottom: 15px;">
+                            基础物联网终端，有线传输，满足基础监测需求
+                        </p>
+                        <div class="product-price">¥14,800 <span style="font-size: 0.85rem; color: #94A3B8; text-decoration: line-through;">¥16,800</span></div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="sold-badge">销量210</div>
+                            <button style="padding: 8px 16px; background: var(--primary-gradient); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                                立即购买
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 产品2 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="images/product2.jpg" alt="物联天下智能感知终端 IOT-200（二代）">
+                    </div>
+                    <div class="product-info">
+                        <h3 style="font-size: 1.2rem; margin-bottom: 8px;">物联天下智能感知终端 IOT-200（二代）</h3>
+                        <p style="color: #64748B; font-size: 0.85rem; margin-bottom: 15px;">
+                            智能物联网系统，多参数监测，无线传输
+                        </p>
+                        <div class="product-price">¥19,800 <span style="font-size: 0.85rem; color: #94A3B8; text-decoration: line-through;">¥22,800</span></div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="sold-badge">销量89</div>
+                            <button style="padding: 8px 16px; background: var(--primary-gradient); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                                立即购买
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 产品3 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="images/product3.jpg" alt="物联天下智能感知终端 IOT-300（三代）">
+                    </div>
+                    <div class="product-info">
+                        <h3 style="font-size: 1.2rem; margin-bottom: 8px;">物联天下智能感知终端 IOT-300（三代）</h3>
+                        <p style="color: #64748B; font-size: 0.85rem; margin-bottom: 15px;">
+                            AI智能物联网系统，多参数监测，爆炸时间预测
+                        </p>
+                        <div class="product-price">¥26,800 <span style="font-size: 0.85rem; color: #94A3B8; text-decoration: line-through;">¥29,800</span></div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="sold-badge">销量156</div>
+                            <button style="padding: 8px 16px; background: var(--primary-gradient); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                                立即购买
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 产品4 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="images/物联天下信息基站接收器.jpg" alt="物联天下信息基站/接收器">
+                    </div>
+                    <div class="product-info">
+                        <h3 style="font-size: 1.2rem; margin-bottom: 8px;">物联天下信息基站/接收器</h3>
+                        <p style="color: #64748B; font-size: 0.85rem; margin-bottom: 15px;">
+                            覆盖半径500米，自组网通信，稳定可靠
+                        </p>
+                        <div class="product-price">¥12,500</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="sold-badge">销量120</div>
+                            <button style="padding: 8px 16px; background: var(--primary-gradient); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                                立即购买
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 产品5 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="images/物联天下复合型环境监测系统.jpg" alt="物联天下复合型环境监测系统">
+                    </div>
+                    <div class="product-info">
+                        <h3 style="font-size: 1.2rem; margin-bottom: 8px;">物联天下复合型环境监测系统</h3>
+                        <p style="color: #64748B; font-size: 0.85rem; margin-bottom: 15px;">
+                            多光谱传感器阵列，实时监测，专业级解决方案
+                        </p>
+                        <div class="product-price">¥38,500</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="sold-badge">销量45</div>
+                            <button style="padding: 8px 16px; background: var(--primary-gradient); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                                立即购买
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 产品6 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="images/定制服务.jpg" alt="配套软件服务">
+                    </div>
+                    <div class="product-info">
+                        <h3 style="font-size: 1.2rem; margin-bottom: 8px;">配套软件服务</h3>
+                        <p style="color: #64748B; font-size: 0.85rem; margin-bottom: 15px;">
+                            数据分析平台，智能预警系统，定制化解决方案
+                        </p>
+                        <div class="product-price">定制报价</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="sold-badge">服务定制</div>
+                            <button style="padding: 8px 16px; background: var(--primary-gradient); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                                咨询详情
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 完整团队展示 - 更新后的团队信息 -->
+    <section id="team" class="full-team">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">核心团队</div>
+                <h2 class="section-title">精英团队</h2>
+                <p class="section-subtitle">
+                    汇聚安全工程、电气工程、信息技术、会计等多领域专业人才，共同为矿山安全保驾护航
+                </p>
+            </div>
+
+            <div class="team-container">
+                <!-- 学生团队 -->
+                <div>
+                    <div class="team-category">
+                        <div class="category-title">核心团队成员</div>
+                        <div class="team-grid-students">
+                            <!-- 项目负责人 -->
+                            <div class="team-member-card">
+                                <div class="member-avatar">
+                                    <img src="images/zhaoyuren.jpg" alt="赵予韧">
+                                </div>
+                                <div class="member-info">
+                                    <div class="member-role">项目负责人 · 电气工程专业</div>
+                                    <h3 style="font-size: 1.2rem; margin-bottom: 8px;">赵予韧</h3>
+                                    <p style="color: #64748B; font-size: 0.85rem; margin-bottom: 12px;">
+                                        负责项目整体规划与技术研发
+                                    </p>
+                                    <div class="member-awards">
+                                        <div class="award-badge">智能技术应用大赛国家级二等奖</div>
+                                        <div class="award-badge">iCAN创新创业大赛国家级三等奖</div>
+                                        <div class="award-badge">全国大学生智能汽车竞赛省级一等奖</div>
+                                        <div class="award-badge">中国国际大学生创新大赛省金奖</div>
+                                        <div class="award-badge">省级大学生创新训练项目2项</div>
+                                        <div class="award-badge">发明专利3项、实用新型专利4项</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 李雪豪 -->
+                            <div class="team-member-card">
+                                <div class="member-avatar">
+                                    <img src="images/lixuehao.jpg" alt="李雪豪">
+                                </div>
+                                <div class="member-info">
+                                    <div class="member-role">技术总监 · 安全工程专业</div>
+                                    <h3 style="font-size: 1.2rem; margin-bottom: 8px;">李雪豪</h3>
+                                    <p style="color: #64748B; font-size: 0.85rem;">
+                                        负责系统安全评估、技术架构设计与创新研发
+                                    </p>
+                                    <div class="member-awards">
+                                        <div class="award-badge">12项国家级奖项</div>
+                                        <div class="award-badge">7项省级奖项</div>
+                                        <div class="award-badge">主持2项国家级大创项目</div>
+                                        <div class="award-badge">大学生创业基金扶持项目1项</div>
+                                        <div class="award-badge">发明专利5项</div>
+                                        <div class="award-badge">实用新型专利7项</div>
+                                        <div class="award-badge">软件著作权8项</div>
+                                        <div class="award-badge">北核论文1篇</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 常文博 -->
+                            <div class="team-member-card">
+                                <div class="member-avatar">
+                                    <img src="images/changbowen.jpg" alt="常文博">
+                                </div>
+                                <div class="member-info">
+                                    <div class="member-role">创新研发负责人 · 安全工程专业</div>
+                                    <h3 style="font-size: 1.2rem; margin-bottom: 8px;">常文博</h3>
+                                    <p style="color: #64748B; font-size: 0.85rem;">
+                                        负责技术创新、算法优化与专利布局
+                                    </p>
+                                    <div class="member-awards">
+                                        <div class="award-badge">智能技术应用大赛国家二等奖</div>
+                                        <div class="award-badge">实践与创新作品大赛国家三等奖</div>
+                                        <div class="award-badge">4项省级奖项</div>
+                                        <div class="award-badge">2项校级奖项</div>
+                                        <div class="award-badge">发明专利4项</div>
+                                        <div class="award-badge">实用新型专利4项</div>
+                                        <div class="award-badge">软件著作权2项</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 李鑫 -->
+                            <div class="team-member-card">
+                                <div class="member-avatar">
+                                    <img src="images/lixin.jpg" alt="李鑫">
+                                </div>
+                                <div class="member-info">
+                                    <div class="member-role">财务与运营总监 · 会计专业</div>
+                                    <h3 style="font-size: 1.2rem; margin-bottom: 8px;">李鑫</h3>
+                                    <p style="color: #64748B; font-size: 0.85rem;">
+                                        负责财务管理、成本控制与商业运营策划
+                                    </p>
+                                    <div class="member-awards">
+                                        <div class="award-badge">初级会计师资格</div>
+                                        <div class="award-badge">马克思主义理论大赛省级二等奖</div>
+                                        <div class="award-badge">全国管理决策模拟大赛省级三等奖</div>
+                                        <div class="award-badge">优秀共青团员</div>
+                                        <div class="award-badge">国家励志奖学金</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 程曦 -->
+                            <div class="team-member-card">
+                                <div class="member-avatar">
+                                    <img src="images/chengxi.jpg" alt="程曦">
+                                </div>
+                                <div class="member-info">
+                                    <div class="member-role">软件开发工程师 · 信息技术专业</div>
+                                    <h3 style="font-size: 1.2rem; margin-bottom: 8px;">程曦</h3>
+                                    <p style="color: #64748B; font-size: 0.85rem;">
+                                        负责软件系统开发、数据处理与算法实现
+                                    </p>
+                                    <div class="member-awards">
+                                        <div class="award-badge">iCAN创新创业大赛国家三等奖</div>
+                                        <div class="award-badge">智能技术应用大赛国家二等奖</div>
+                                        <div class="award-badge">1项省级奖项</div>
+                                        <div class="award-badge">2项校级奖项</div>
+                                        <div class="award-badge">发明专利1项</div>
+                                        <div class="award-badge">实用新型专利1项</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 张海旭 -->
+                            <div class="team-member-card">
+                                <div class="member-avatar">
+                                    <img src="images/zhanghaixu.jpg" alt="张海旭">
+                                </div>
+                                <div class="member-info">
+                                    <div class="member-role">硬件研发工程师 · 电气工程专业</div>
+                                    <h3 style="font-size: 1.2rem; margin-bottom: 8px;">张海旭</h3>
+                                    <p style="color: #64748B; font-size: 0.85rem;">
+                                        负责硬件系统设计、电路设计与传感器集成
+                                    </p>
+                                    <div class="member-awards">
+                                        <div class="award-badge">智能技术应用大赛国家二等奖</div>
+                                        <div class="award-badge">iCAN创新创业大赛国家三等奖</div>
+                                        <div class="award-badge">1项省级奖项</div>
+                                        <div class="award-badge">5项校级奖项</div>
+                                        <div class="award-badge">发明专利1项</div>
+                                        <div class="award-badge">实用新型专利1项</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 专家顾问 -->
+                <div>
+                    <div class="team-category">
+                        <div class="category-title">专家顾问团队</div>
+                        <div class="team-grid-advisors">
+                            <!-- 技术顾问 -->
+                            <div class="team-member-card">
+                                <div class="member-avatar">
+                                    <img src="images/lanshihao.jpg" alt="兰世豪">
+                                </div>
+                                <div class="member-info">
+                                    <div class="member-role" style="color: var(--color-primary); font-weight: 600; margin-bottom: 10px; font-size: 0.9rem;">技术顾问</div>
+                                    <h3 style="font-size: 1.2rem; margin-bottom: 8px;">兰世豪</h3>
+                                </div>
+                            </div>
+
+                            <!-- 技术顾问 -->
+                            <div class="team-member-card">
+                                <div class="member-avatar">
+                                    <img src="images/hantao.jpg" alt="韩涛 副教授">
+                                </div>
+                                <div class="member-info">
+                                    <div class="member-role">技术顾问 · 副教授</div>
+                                    <h3 style="font-size: 1.2rem; margin-bottom: 8px;">韩涛 副教授</h3>
+                                    <p style="color: #64748B; font-size: 0.85rem; margin-bottom: 12px;">
+                                        计算机视觉与机器人导航领域专家
+                                    </p>
+                                    <div style="color: #64748B; font-size: 0.85rem;">
+                                        工业场景智能感知与自主导航技术深耕者，发表高水平论文8篇，主持及参与多项省部级科研项目。
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 技术顾问 -->
+                            <div class="team-member-card">
+                                <div class="member-avatar">
+                                    <img src="images/huangyourui.jpg" alt="黄友锐 教授">
+                                </div>
+                                <div class="member-info">
+                                    <div class="member-role">技术顾问 · 教授</div>
+                                    <h3 style="font-size: 1.2rem; margin-bottom: 8px;">黄友锐 教授</h3>
+                                    <p style="color: #64748B; font-size: 0.85rem; margin-bottom: 12px;">
+                                        国务院特殊津贴专家、教育部新世纪人才
+                                    </p>
+                                    <div style="color: #64748B; font-size: 0.85rem;">
+                                        主持国家级及省部级科研项目10余项，获省部级科技奖10项，拥有发明专利13项，发表SCI/EI论文30余篇。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 媒体报道 -->
+    <section id="media" class="media-coverage">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label" style="background: var(--accent-gradient);">媒体关注</div>
+                <h2 class="section-title" style="background: linear-gradient(135deg, white, #FFD93D); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    权威媒体报道
+                </h2>
+                <p class="section-subtitle" style="color: rgba(255, 255, 255, 0.7);">
+                    项目成果获得学习强国、大学生云报、长江头条等多家权威媒体报道
+                </p>
+            </div>
+
+            <div class="media-grid">
+                <!-- 学习强国报道 -->
+                <div class="media-card">
+                    <div class="media-logo">
+                        <i class="fas fa-star" style="color: #FFD700; margin-right: 8px;"></i>
+                        学习强国
+                    </div>
+                    <h3 style="color: white; font-size: 1.1rem; margin-bottom: 15px;">
+                        智创守护安全路 科技预警新征程
+                    </h3>
+                    <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem; line-height: 1.7; margin-bottom: 20px;">
+                        安徽理工大学学生团队研发的井下火灾爆炸性监测预警系统，以动态爆炸边界算法实现0-100%连续风险评估，突破传统二元判断。所使用的8类传感器可在300℃高温高尘环境中稳定工作，破解极端环境监测难题。
+                    </p>
+                    <div style="color: rgba(255, 255, 255, 0.5); font-size: 0.85rem;">
+                        2025-07-17
+                    </div>
+                </div>
+
+                <!-- 大学生云报报道 -->
+                <div class="media-card">
+                    <div class="media-logo">
+                        <i class="fas fa-newspaper" style="color: #00D4FF; margin-right: 8px;"></i>
+                        大学生云报
+                    </div>
+                    <h3 style="color: white; font-size: 1.1rem; margin-bottom: 15px;">
+                        以科技微光，守护矿井平安
+                    </h3>
+                    <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem; line-height: 1.7; margin-bottom: 20px;">
+                        安徽理工大学一支由12名跨学科师生组成的团队，历经数百个日夜的潜心钻研与技术攻关，成功研发出具有重大实用价值的"井下火灾爆炸性监测预警系统"，获得四项软件著作权授权，并提交了三项专利处于审核状态。
+                    </p>
+                    <div style="color: rgba(255, 255, 255, 0.5); font-size: 0.85rem;">
+                        2025-07-16
+                    </div>
+                </div>
+
+                <!-- 长江头条报道 -->
+                <div class="media-card">
+                    <div class="media-logo">
+                        <i class="fas fa-bullhorn" style="color: #FF6B6B; margin-right: 8px;"></i>
+                        长江头条
+                    </div>
+                    <h3 style="color: white; font-size: 1.1rem; margin-bottom: 15px;">
+                        攻坚之路：从图纸构想到井下实测
+                    </h3>
+                    <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem; line-height: 1.7; margin-bottom: 20px;">
+                        研发初期，团队面临严峻的技术挑战。井下极端高温300度以上与持续高尘环境，对传感器的稳定性和精度要求极为苛刻，导致早期设备数据漂移、失真，可靠性不足。
+                    </p>
+                    <div style="color: rgba(255, 255, 255, 0.5); font-size: 0.85rem;">
+                        2025-07-17
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 增强版CTA区域 -->
+    <section id="contact" class="enhanced-cta">
+        <!-- 粒子背景 -->
+        <div class="cta-particles" id="cta-particles"></div>
+        
+        <div class="cta-container">
+            <h1 class="cta-title">
+                守护矿井安全<br>
+                <span>共筑智慧矿山</span>
+            </h1>
+            
+            <p class="cta-description">
+                我们诚邀您共同探讨<strong>矿山安全监测解决方案</strong>，为矿工生命安全保驾护航。<br>
+                期待与您合作，共创<strong>智慧矿山新篇章</strong>。
+            </p>
+            
+            <a href="tel:020-00000000" class="cta-contact-button">
+                <span class="phone-icon">
+                    <i class="fas fa-phone-alt"></i>
+                </span>
+                立即咨询：020-00000000
+            </a>
+            
+            <div class="cta-stats">
+                <div class="stat-card">
+                    <div class="stat-value">>92.3%</div>
+                    <div class="stat-label">预测准确率</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">-65%</div>
+                    <div class="stat-label">事故率降低</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2400h</div>
+                    <div class="stat-label">超长待机</div>
+                </div>
+            </div>
+            
+            <div class="university-logo">
+                <div class="logo-container">
+                    <div class="logo-badge">安徽理工大学 · 科技创新项目</div>
+                    <div class="logo-text">物联天下 · 全链条安全监测系统</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 高级页脚 -->
+    <footer class="advanced-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <div class="footer-logo">
+                        <div style="width: 40px; height: 40px; background: var(--primary-gradient); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                            IoT
+                        </div>
+                        <div>
+                            <div style="font-size: 1.1rem; font-weight: 700;">物联天下</div>
+                            <div style="font-size: 0.75rem; opacity: 0.7;">全链条井下火灾爆炸智能感知与监测预警系统</div>
+                        </div>
+                    </div>
+                    <p style="color: rgba(255,255,255,0.7); line-height: 1.7; margin-bottom: 25px; font-size: 0.9rem;">
+                        安徽理工大学科技创新项目，专注于井下火灾爆炸智能感知与监测预警，
+                        致力于用科技守护矿工生命安全。
+                    </p>
+                    
+                    <div class="footer-newsletter">
+                        <div style="font-weight: 600; margin-bottom: 12px; font-size: 0.9rem;">订阅最新动态</div>
+                        <input type="email" class="newsletter-input" placeholder="请输入您的邮箱">
+                        <button style="width: 100%; padding: 12px; background: var(--primary-gradient); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
+                            订阅
+                        </button>
+                    </div>
+                </div>
+                
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 20px; font-size: 1rem;">产品中心</div>
+                    <ul style="list-style: none; color: rgba(255,255,255,0.7); line-height: 2.2;">
+                        <li><a href="#store" style="color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; font-size: 0.9rem;">智能感知终端</a></li>
+                        <li><a href="#store" style="color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; font-size: 0.9rem;">复合型气体监测系统</a></li>
+                        <li><a href="#store" style="color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; font-size: 0.9rem;">无线信息基站</a></li>
+                        <li><a href="#store" style="color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; font-size: 0.9rem;">配套软件服务</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 20px; font-size: 1rem;">关于我们</div>
+                    <ul style="list-style: none; color: rgba(255,255,255,0.7); line-height: 2.2;">
+                        <li><a href="#team" style="color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; font-size: 0.9rem;">团队介绍</a></li>
+                        <li><a href="#evolution" style="color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; font-size: 0.9rem;">发展历程</a></li>
+                        <li><a href="#tech" style="color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; font-size: 0.9rem;">技术创新</a></li>
+                        <li><a href="#media" style="color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; font-size: 0.9rem;">媒体报道</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 20px; font-size: 1rem;">解决方案</div>
+                    <ul style="list-style: none; color: rgba(255,255,255,0.7); line-height: 2.2;">
+                        <li><a href="#" style="color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; font-size: 0.9rem;">煤矿安全监测</a></li>
+                        <li><a href="#" style="color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; font-size: 0.9rem;">隧道安全预警</a></li>
+                        <li><a href="#" style="color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; font-size: 0.9rem;">石油化工监测</a></li>
+                        <li><a href="#" style="color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; font-size: 0.9rem;">城市安全防控</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 20px; font-size: 1rem;">联系我们</div>
+                    <ul style="list-style: none; color: rgba(255,255,255,0.7); line-height: 1.8;">
+                        <li style="margin-bottom: 12px;">
+                            <i class="fas fa-map-marker-alt" style="margin-right: 8px; font-size: 0.9rem;"></i>
+                            <span style="font-size: 0.9rem;">安徽理工大学</span>
+                        </li>
+                        <li style="margin-bottom: 12px;">
+                            <i class="fas fa-phone" style="margin-right: 8px; font-size: 0.9rem;"></i>
+                            <span style="font-size: 0.9rem;">020-00000000</span>
+                        </li>
+                        <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                            <i class="fas fa-envelope" style="margin-right: 8px; font-size: 0.9rem;"></i>
+                            <span style="font-size: 0.9rem;">contact@wuliantianxia.com</span>
+                        </li>
+                        <li style="margin-bottom: 12px;">
+                            <i class="fas fa-clock" style="margin-right: 8px; font-size: 0.9rem;"></i>
+                            <span style="font-size: 0.9rem;">周一至周五 9:00-18:00</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div style="font-size: 0.85rem;">© 2024 安徽理工大学 · 物联天下项目组. All Rights Reserved.</div>
+                <div style="display: flex; gap: 15px;">
+                    <a href="#" style="color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.85rem;">隐私政策</a>
+                    <a href="#" style="color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.85rem;">使用条款</a>
+                    <div style="display: flex; gap: 12px;">
+                        <a href="#" style="color: rgba(255,255,255,0.5);"><i class="fab fa-weixin"></i></a>
+                        <a href="#" style="color: rgba(255,255,255,0.5);"><i class="fab fa-weibo"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 页面加载
+        document.addEventListener('DOMContentLoaded', function() {
+            // 生成CTA粒子效果
+            function createParticles() {
+                const container = document.getElementById('cta-particles');
+                if (!container) return;
+                
+                const particleCount = 25;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    particle.classList.add('particle');
+                    
+                    // 随机大小
+                    const size = Math.random() * 8 + 4;
+                    particle.style.width = `${size}px`;
+                    particle.style.height = `${size}px`;
+                    
+                    // 随机位置
+                    particle.style.left = `${Math.random() * 100}%`;
+                    particle.style.top = `${Math.random() * 100}%`;
+                    
+                    // 随机动画延迟
+                    particle.style.animationDelay = `${Math.random() * 15}s`;
+                    particle.style.animationDuration = `${15 + Math.random() * 10}s`;
+                    
+                    // 随机透明度
+                    particle.style.opacity = Math.random() * 0.3 + 0.1;
+                    
+                    container.appendChild(particle);
+                }
+            }
+
+            // 导航指示器
+            function initNavIndicator() {
+                const navItems = document.querySelectorAll('.nav-item');
+                const indicator = document.getElementById('nav-indicator');
+                
+                if (!indicator) return;
+                
+                navItems.forEach(item => {
+                    const link = item.querySelector('.nav-link');
+                    
+                    link.addEventListener('mouseenter', function() {
+                        const width = this.offsetWidth;
+                        const left = this.offsetLeft;
+                        
+                        indicator.style.width = `${width}px`;
+                        indicator.style.left = `${left}px`;
+                    });
+                    
+                    item.addEventListener('mouseleave', function() {
+                        const activeLink = document.querySelector('.nav-link.active');
+                        if (activeLink) {
+                            const width = activeLink.offsetWidth;
+                            const left = activeLink.parentElement.offsetLeft;
+                            
+                            indicator.style.width = `${width}px`;
+                            indicator.style.left = `${left}px`;
+                        }
+                    });
+                });
+                
+                // 初始位置
+                const activeLink = document.querySelector('.nav-link.active');
+                if (activeLink) {
+                    const width = activeLink.offsetWidth;
+                    const left = activeLink.parentElement.offsetLeft;
+                    
+                    indicator.style.width = `${width}px`;
+                    indicator.style.left = `${left}px`;
+                }
+            }
+
+            // 初始化粒子效果
+            createParticles();
+            
+            // 初始化导航指示器
+            initNavIndicator();
+            
+            // 导航栏滚动效果
+            window.addEventListener('scroll', function() {
+                const nav = document.getElementById('advanced-nav');
+                if (nav) {
+                    if (window.scrollY > 30) {
+                        nav.classList.add('scrolled');
+                    } else {
+                        nav.classList.remove('scrolled');
+                    }
+                }
+            });
+            
+            // 平滑滚动（已修复导航栏遮挡问题）
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    if (targetId === '#') return;
+                    
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        // 计算导航栏高度
+                        const nav = document.getElementById('advanced-nav');
+                        const navHeight = nav ? nav.offsetHeight : 80;
+                        
+                        // 滚动到目标位置，考虑导航栏高度
+                        window.scrollTo({
+                            top: targetElement.offsetTop - navHeight,
+                            behavior: 'smooth'
+                        });
+                        
+                        // 更新导航链接状态
+                        document.querySelectorAll('.nav-link').forEach(link => {
+                            link.classList.remove('active');
+                        });
+                        this.classList.add('active');
+                    }
+                });
+            });
+            
+            // 自动更新导航激活状态
+            const sections = document.querySelectorAll('section[id]');
+            window.addEventListener('scroll', function() {
+                const nav = document.getElementById('advanced-nav');
+                const navHeight = nav ? nav.offsetHeight : 80;
+                
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - navHeight - 100;
+                    const sectionHeight = section.clientHeight;
+                    if (window.scrollY >= sectionTop && window.scrollY < sectionTop + sectionHeight) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${current}`) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+            
+            // 按钮点击效果
+            const ctaButton = document.querySelector('.cta-contact-button');
+            if (ctaButton) {
+                ctaButton.addEventListener('click', function(e) {
+                    this.style.animation = 'none';
+                    setTimeout(() => {
+                        this.style.animation = 'pulse 2s infinite';
+                    }, 100);
+                });
+            }
+            
+            // 产品购买按钮点击效果
+            const buyButtons = document.querySelectorAll('.product-card button');
+            buyButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
+                    setTimeout(() => {
+                        this.innerHTML = '立即购买';
+                        alert('产品已添加到购物车！');
+                    }, 1000);
+                });
+            });
+            
+            // 移动端浮动卡片调整
+            if (window.innerWidth <= 768) {
+                const floatingCards = document.querySelectorAll('.floating-card');
+                floatingCards.forEach(card => {
+                    card.style.position = 'relative';
+                    card.style.marginBottom = '20px';
+                    card.style.animation = 'none';
+                });
+            }
+        });
+    </script>
+</body>
+</html>
